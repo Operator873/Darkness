@@ -388,7 +388,7 @@ def dorevokeTPA(bot, name, project, target, until, reason):
 	else:
 		bot.say("Unknown error: " + block)
 
-def dogrpBlock(bot, name, project, target):
+def doltaBlock(bot, name, project, target):
 	# Setup dbase connection
 	db = sqlite3.connect("/home/ubuntu/.sopel/modules/darkness.db")
 	c = db.cursor()
@@ -623,12 +623,12 @@ def commandBlock(bot, trigger):
 	until = re.sub(' +', ' ', adjust).strip()
 	doBlock(bot, trigger.nick, project, target.strip(), until, reason)
 
-@module.commands('grp')
-@module.nickname_commands('grp')
-def commandGRPblock(bot, trigger):
-	# dogrpBlock(bot, name, project, target):
+@module.commands('lta')
+@module.nickname_commands('lta')
+def commandltablock(bot, trigger):
+	# doltaBlock(bot, name, project, target):
 	target, project = trigger.group(2).split(">", 1)
-	dogrpBlock(bot, trigger.nick, project.strip(), target.strip())
+	doltaBlock(bot, trigger.nick, project.strip(), target.strip())
 	bot.say("@icunew " + target)
 
 @module.commands('tpa')
