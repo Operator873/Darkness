@@ -11,6 +11,8 @@ This is a Sopel IRC Bot plugin which supports Wikimedia sysops, global sysops, c
 
 I call it Darkness because the ease at which you can apply blocks will make othere wonder if you have dark arts at your disposal.
 
+I take absolutely no responsibility for anything you do on wiki with this plugin. Play stupid games, win stupid prizes... like being desysopped. 
+
 # Dependencies
 
 This plugin requires Python3.x and libraries: requests, sqlite3, json, re, and OAuth1. This plugin also requires darkness.db.
