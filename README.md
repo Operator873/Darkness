@@ -4,7 +4,6 @@ Hello Darkness my old friend...
 [![GitHub issues](https://img.shields.io/github/issues/Operator873/Darkness)](https://github.com/Operator873/Darkness/issues)
 [![GitHub forks](https://img.shields.io/github/forks/Operator873/Darkness)](https://github.com/Operator873/Darkness/network)
 [![GitHub stars](https://img.shields.io/github/stars/Operator873/Darkness)](https://github.com/Operator873/Darkness/stargazers)
-[![GitHub license](https://img.shields.io/github/license/Operator873/Darkness)](https://github.com/Operator873/Darkness/blob/master/LICENSE)
 ![GitHub All Releases](https://img.shields.io/github/downloads/Operator873/Darkness/total)
 ![GitHub contributors](https://img.shields.io/github/contributors/Operator873/Darkness)
 
