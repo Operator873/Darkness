@@ -5,8 +5,8 @@ Hello Darkness my old friend...
 [![GitHub forks](https://img.shields.io/github/forks/Operator873/Darkness)](https://github.com/Operator873/Darkness/network)
 [![GitHub stars](https://img.shields.io/github/stars/Operator873/Darkness)](https://github.com/Operator873/Darkness/stargazers)
 [![GitHub license](https://img.shields.io/github/license/Operator873/Darkness)](https://github.com/Operator873/Darkness/blob/master/LICENSE)
-[![GitHub All Releases](https://img.shields.io/github/downloads/Operator873/Darkness/total)
-[![GitHub contributors](https://img.shields.io/github/contributors/Operator873/Darkness)
+![GitHub All Releases](https://img.shields.io/github/downloads/Operator873/Darkness/total)
+![GitHub contributors](https://img.shields.io/github/contributors/Operator873/Darkness)
 
 This is a Sopel IRC Bot plugin which supports Wikimedia sysops, global sysops, checkusers, and stewards by allowing block and lock actions from IRC. It could be modified quite easily to work with Miraheze or any other Mediawiki install.
 
