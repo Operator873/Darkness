@@ -5,22 +5,6 @@ import re
 from requests_oauthlib import OAuth1
 from sopel import module
 
-# Login responses
-# 1) {'batchcomplete': '', 'query': {'tokens': {'csrftoken': '2a0e39e9808f1586f33e6427a69958655f0a766f+\\'}}}
-# 2) {'error': {'code': 'mwoauth-invalid-authorization', 'info': 'The authorization headers in your request are not valid: The request came from an invalid IP address.', '*': 'See https://testwiki.wiki/api.php for API usage. Subscribe to the mediawiki-api-announce mailing list at &lt;https://lists.wikimedia.org/mailman/listinfo/mediawiki-api-announce&gt; for notice of API deprecations and breaking changes.'}}
-#
-# Edit messages
-# 1) {'edit': {'result': 'Success', 'pageid': 4020, 'title': 'User:Operator873/sandbox', 'contentmodel': 'wikitext', 'oldrevid': 10560, 'newrevid': 10561, 'newtimestamp': '2020-06-08T23:35:24Z'}}
-# 2) {'error': {'code': 'badtoken', 'info': 'Invalid CSRF token.', '*': 'See https://testwiki.wiki/api.php for API usage. Subscribe to the mediawiki-api-announce mailing list at &lt;https://lists.wikimedia.org/mailman/listinfo/mediawiki-api-announce&gt; for notice of API deprecations and breaking changes.'}}
-# 3) 
-#
-# Block messages
-# {'block': {'user': 'GoodSock873', 'userID': 1287, 'expiry': '2020-06-09T23:41:38Z', 'id': 1120, 'reason': 'Another test block', 'pagerestrictions': None, 'namespacerestrictions': None}}
-# {'error': {'code': 'badtoken', 'info': 'Invalid CSRF token.', '*': 'See https://testwiki.wiki/api.php for API usage. Subscribe to the mediawiki-api-announce mailing list at &lt;https://lists.wikimedia.org/mailman/listinfo/mediawiki-api-announce&gt; for notice of API deprecations and breaking changes.'}}
-# {'error': {'code': 'alreadyblocked', 'info': '"GoodSock873" is already blocked.', '*': 'See https://testwiki.wiki/api.php for API usage. Subscribe to the mediawiki-api-announce mailing list at &lt;https://lists.wikimedia.org/mailman/listinfo/mediawiki-api-announce&gt; for notice of API deprecations and breaking changes.'}}
-# {'error': {'code': 'permissiondenied', 'info': "You don't have permission to block this user from editing.", '*': 'See https://testwiki.wiki/api.php for API usage. Subscribe to the mediawiki-api-announce mailing list at &lt;https://lists.wikimedia.org/mailman/listinfo/mediawiki-api-announce&gt; for notice of API deprecations and breaking changes.'}}
-
-
 def xmit(site, creds, payload, method):
 	# This handles the post/get requests
 	AUTH = OAuth1(creds[1], creds[2], creds[3], creds[4])
@@ -61,59 +45,6 @@ def getCSRF(bot, site, creds, type):
 	else:
 		csrfToken = token['query']['tokens']['%stoken' % type]
 		return csrfToken
-
-def doEdit(bot, name, project, edit):
-	# Setup dbase connection
-	db = sqlite3.connect("/home/ubuntu/.sopel/modules/darkness.db")
-	c = db.cursor()
-	
-	# Get user credentials and prepare api url for use
-	creds = c.execute('''SELECT * from auth where account="%s";''' % name).fetchall()[0]
-			
-	db.close()
-   
-	if len(creds) == 0:
-		bot.say(name + ", you are not configured. Contact Operator873.")
-		return
-   
-	site = getWiki(project)
-	
-	if site is None:
-		bot.say("I don't know that wiki.")
-		return
-	
-	csrfToken = getCSRF(bot, site, creds, "csrf")
-	
-	if csrfToken is False:
-		return
-	
-	reqEdit = {
-		'action':"edit",
-		'format':"json",
-		'title':"User:Operator873/sandbox",
-		'section':"new",
-		'sectiontitle':"New Test",
-		'text':edit,
-		'summary':"This is a test edit",
-		'minor':"true",
-		'redirect':"true",
-		'token':csrfToken
-	}
-	
-	# send to xmit
-	edit = xmit(site, creds, reqEdit, "post")
-	
-	# Check for success
-	if 'edit' in edit:
-		bot.say("Success! Edit was made to " + edit['edit']['title'])
-	elif 'error' in edit:
-		reason = edit['error']['info']
-		if reason == "Invalid CSRF token.":
-			bot.say("Received CSRF token error. Try again...")
-		else:
-			bot.say(reason)
-	else:
-		bot.say("Unknown error!: " + edit)
 
 def doBlock(bot, name, project, target, until, reason):
 	# Setup dbase connection
