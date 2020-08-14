@@ -5,6 +5,8 @@ import re
 from requests_oauthlib import OAuth1
 from sopel import module
 
+DARKNESS_DB = "/home/ubuntu/.sopel/modules/darkness.db"
+
 def xmit(site, creds, payload, method):
 	# This handles the post/get requests
 	AUTH = OAuth1(creds[1], creds[2], creds[3], creds[4])
@@ -16,7 +18,7 @@ def xmit(site, creds, payload, method):
 
 def getWiki(project):
 	# Define dbase connection
-	db = sqlite3.connect("/home/ubuntu/.sopel/modules/darkness.db")
+	db = sqlite3.connect(DARKNESS_DB)
 	c = db.cursor()
 	
 	site = c.execute('''SELECT apiurl FROM wikis WHERE wiki="%s";''' % project).fetchone()[0]
@@ -48,7 +50,7 @@ def getCSRF(bot, site, creds, type):
 
 def doBlock(bot, name, project, target, until, reason):
 	# Setup dbase connection
-	db = sqlite3.connect("/home/ubuntu/.sopel/modules/darkness.db")
+	db = sqlite3.connect(DARKNESS_DB)
 	c = db.cursor()
 	
 	# Get user credentials and prepare api url for use
@@ -110,7 +112,7 @@ def doBlock(bot, name, project, target, until, reason):
 
 def doReblock(bot, name, project, target, until, reason):
 	# Setup dbase connection
-	db = sqlite3.connect("/home/ubuntu/.sopel/modules/darkness.db")
+	db = sqlite3.connect(DARKNESS_DB)
 	c = db.cursor()
 	
 	# Get user credentials and prepare api url for use
@@ -171,7 +173,7 @@ def doReblock(bot, name, project, target, until, reason):
 
 def doGlobalblock(bot, name, target, until, reason):
 	# Setup dbase connection
-	db = sqlite3.connect("/home/ubuntu/.sopel/modules/darkness.db")
+	db = sqlite3.connect(DARKNESS_DB)
 	c = db.cursor()
 	
 	# Get user credentials and prepare api url for use
@@ -219,7 +221,7 @@ def doGlobalblock(bot, name, target, until, reason):
 
 def doLock(bot, name, target, reason):
 	# Setup dbase connection
-	db = sqlite3.connect("/home/ubuntu/.sopel/modules/darkness.db")
+	db = sqlite3.connect(DARKNESS_DB)
 	c = db.cursor()
 	
 	# Get user credentials and prepare api url for use
@@ -261,7 +263,7 @@ def doLock(bot, name, target, reason):
 
 def dorevokeTPA(bot, name, project, target, until, reason):
 	# Setup dbase connection
-	db = sqlite3.connect("/home/ubuntu/.sopel/modules/darkness.db")
+	db = sqlite3.connect(DARKNESS_DB)
 	c = db.cursor()
 	
 	# Get user credentials and prepare api url for use
@@ -321,7 +323,7 @@ def dorevokeTPA(bot, name, project, target, until, reason):
 
 def doltaBlock(bot, name, project, target):
 	# Setup dbase connection
-	db = sqlite3.connect("/home/ubuntu/.sopel/modules/darkness.db")
+	db = sqlite3.connect(DARKNESS_DB)
 	c = db.cursor()
 	
 	# Get user credentials and prepare api url for use
@@ -381,7 +383,7 @@ def doltaBlock(bot, name, project, target):
 
 def doSoftblock(bot, name, project, target, until, reason):
 	# Setup dbase connection
-	db = sqlite3.connect("/home/ubuntu/.sopel/modules/darkness.db")
+	db = sqlite3.connect(DARKNESS_DB)
 	c = db.cursor()
 	
 	# Get user credentials and prepare api url for use
@@ -438,7 +440,7 @@ def doSoftblock(bot, name, project, target, until, reason):
 
 def doUnblock(bot, name, project, target, reason):
 	# Setup dbase connection
-	db = sqlite3.connect("/home/ubuntu/.sopel/modules/darkness.db")
+	db = sqlite3.connect(DARKNESS_DB)
 	c = db.cursor()
 	
 	# Get user credentials and prepare api url for use
@@ -484,7 +486,7 @@ def doUnblock(bot, name, project, target, reason):
 
 def addUser(bot, name):
 	# Setup dbase connection
-	db = sqlite3.connect("/home/ubuntu/.sopel/modules/darkness.db")
+	db = sqlite3.connect(DARKNESS_DB)
 	c = db.cursor()
 	
 	# Check for user already existing
@@ -503,7 +505,7 @@ def addUser(bot, name):
 
 def remUser(bot, name):
 	# Setup dbase connection
-	db = sqlite3.connect("/home/ubuntu/.sopel/modules/darkness.db")
+	db = sqlite3.connect(DARKNESS_DB)
 	c = db.cursor()
 	
 	# Check for user already existing
@@ -520,7 +522,7 @@ def remUser(bot, name):
 
 def addKeys(bot, name, info):
 	# Setup dbase connection
-	db = sqlite3.connect("/home/ubuntu/.sopel/modules/darkness.db")
+	db = sqlite3.connect(DARKNESS_DB)
 	c = db.cursor()
 	
 	try:
@@ -577,7 +579,7 @@ def commandRevoketpa(bot, trigger):
 def commandreBlock(bot, trigger):
 	# !block Some Nick Here > simplewiki 1week/31hours/6months/indef Some reason here.
 	target, info = trigger.group(2).split(">", 1)
-	project, until, reason = squeeze.strip().split(" ", 2)
+	project, until, reason = info.strip().split(" ", 2)
 	adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
 	until = re.sub(' +', ' ', adjust).strip()
 	doReblock(bot, trigger.nick, project, target.strip(), until, reason)
@@ -680,7 +682,7 @@ def commandTokens(bot, trigger):
 @module.commands('getapi')
 def getAPI(bot, trigger):
 	# Setup dbase connection
-	db = sqlite3.connect("/home/ubuntu/.sopel/modules/darkness.db")
+	db = sqlite3.connect(DARKNESS_DB)
 	c = db.cursor()
 	wiki = str(trigger.group(3))
 	check = c.execute('''SELECT apiurl FROM wikis WHERE wiki="%s";''' % wiki).fetchone()[0]
