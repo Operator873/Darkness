@@ -599,6 +599,65 @@ def addKeys(bot, name, info):
 			db.commit()
 			db.close()
 
+def queryproj(args):
+
+	# Setup dbase connection
+	db = sqlite3.connect(DARKNESS_DB)
+	c = db.cursor()
+	
+	check = c.execute('''SELECT apiurl FROM wikis WHERE wiki="%s";''' % args).fetchone()
+	
+	db.close()
+	
+	if check is None:
+		msg = "I don't know " + args + "."
+	else:
+		msg = "I know " + args + "'s api is located at: " + check[0]
+	
+	return msg
+
+def addproj(args):
+	try:
+		proj, endpoint = args.split(' ', 1)
+	except:
+		msg = "Not enough arguments! (<project> <endpoint>)"
+		return msg
+	
+	db = sqlite3.connect(DARKNESS_DB)
+	c = db.cursor()
+	
+	precheck = c.execute('''SELECT apiurl FROM wikis WHERE wiki="%s";''' % proj).fetchone()
+	
+	if len(precheck) > 0:
+		msg = "I already know " + proj + ". It's API is: " + precheck[0]
+	else:
+		c.execute('''INSERT INTO wikis VALUES("%s", "%s");''' % (proj, endpoint))
+		msg = proj + " added with API located at: " + endpoint
+	
+	db.commit()
+	db.close()
+	
+	return msg
+
+def delproj(args):
+	
+	db = sqlite3.connect(DARKNESS_DB)
+	c = db.cursor()
+	
+	precheck = c.execute('''SELECT apiurl FROM wikis WHERE wiki="%s";''' % args).fetchone()
+	
+	if len(precheck) < 1:
+		msg = "I don't know " + args + "."
+	else:
+		c.execute('''DELETE FROM wikis WHERE wiki="%s" OR apiurl="%s";''' % (args, args))
+		msg = args + " successfully deleted from database"
+	
+	db.commit()
+	db.close()
+	
+	return msg
+	
+
 @module.commands('block')
 @module.nickname_commands('block')
 def commandBlock(bot, trigger):
@@ -740,3 +799,22 @@ def getAPI(bot, trigger):
 	check = c.execute('''SELECT apiurl FROM wikis WHERE wiki="%s";''' % wiki).fetchone()[0]
 	db.close()
 	bot.say(check)
+
+@module.require_owner(message="This function is only available to Operator873.")
+@module.commands('proj')
+def manageproj(bot, trigger):
+	try:
+		action, args = trigger.group(2).split(' ', 1)
+	except:
+		bot.say("Not enough arguements. Syntax is '!proj <action> <project> <endPoint>'")
+		return
+	
+	if action == "query":
+		bot.say(queryproj(args))
+	elif action == "add":
+		bot.say(addproj(args))
+	elif action == "del":
+		bot.say(delproj(args))
+	else:
+		bot.say("I'm not sure what " + action + " is. Try query, add, or del.")
+		return
