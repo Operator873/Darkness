@@ -5,7 +5,7 @@ import re
 from requests_oauthlib import OAuth1
 from sopel import module
 
-DARKNESS_DB = "/home/ubuntu/.sopel/modules/darkness.db"
+DARKNESS_DB = "/home/ubuntu/.sopel/modules/dark.db"
 
 def xmit(site, creds, payload, method):
 	# This handles the post/get requests
@@ -47,6 +47,59 @@ def getCSRF(bot, site, creds, type):
 	else:
 		csrfToken = token['query']['tokens']['%stoken' % type]
 		return csrfToken
+
+def doEdit(bot, name, project, edit):
+	# Setup dbase connection
+	db = sqlite3.connect(DARKNESS_DB)
+	c = db.cursor()
+	
+	# Get user credentials and prepare api url for use
+	creds = c.execute('''SELECT * from auth where account="%s";''' % name).fetchall()[0]
+			
+	db.close()
+   
+	if len(creds) == 0:
+		bot.say(name + ", you are not configured. Contact Operator873.")
+		return
+   
+	site = getWiki(project)
+	
+	if site is None:
+		bot.say("I don't know that wiki.")
+		return
+	
+	csrfToken = getCSRF(bot, site, creds, "csrf")
+	
+	if csrfToken is False:
+		return
+	
+	reqEdit = {
+		'action':"edit",
+		'format':"json",
+		'title':"User:Operator873/sandbox",
+		'section':"new",
+		'sectiontitle':"New Test",
+		'text':edit,
+		'summary':"This is a test edit",
+		'minor':"true",
+		'redirect':"true",
+		'token':csrfToken
+	}
+	
+	# send to xmit
+	edit = xmit(site, creds, reqEdit, "post")
+	
+	# Check for success
+	if 'edit' in edit:
+		bot.say("Success! Edit was made to " + edit['edit']['title'])
+	elif 'error' in edit:
+		reason = edit['error']['info']
+		if reason == "Invalid CSRF token.":
+			bot.say("Received CSRF token error. Try again...")
+		else:
+			bot.say(reason)
+	else:
+		bot.say("Unknown error!: " + edit)
 
 def doBlock(bot, name, project, target, until, reason):
 	# Setup dbase connection
@@ -562,7 +615,6 @@ def commandltablock(bot, trigger):
 	# doltaBlock(bot, name, project, target):
 	target, project = trigger.group(2).split(">", 1)
 	doltaBlock(bot, trigger.nick, project.strip(), target.strip())
-	bot.say("@icunew " + target)
 
 @module.commands('tpa')
 @module.nickname_commands('tpa')
