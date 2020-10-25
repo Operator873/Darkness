@@ -216,7 +216,7 @@ def doLock(bot, name, target, reason):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not conifgured. Please contact Operator873.")
+        bot.say("You are not configured. Please contact Operator873.")
         return
     
     site = getWiki("metawiki")
@@ -245,7 +245,42 @@ def doLock(bot, name, target, reason):
     if 'error' in lock:
         bot.say("lock failed! " + lock['error']['info'])
     else:
-        bot.say("Lock succeeded. ")
+        bot.say(target + " locked.")
+
+def doUnlock(bot, name, target, reason):
+    creds = getCreds(name)
+    
+    if creds is None:
+        bot.say("You are not configured. Please contact Operator873.")
+        return
+    
+    site = getWiki("metawiki")
+    
+    if site is None:
+        bot.say("I don't know that wiki.")
+        return
+    
+    csrfToken = getCSRF(bot, site, creds, "setglobalaccountstatus")
+    
+    if csrfToken is False:
+        return
+        
+    lockRequest = {
+        "action":"setglobalaccountstatus",
+        "format":"json",
+        "user":target,
+        "locked":"unlock",
+        "reason":reason,
+        "token":csrfToken
+    }
+    
+    # Send block request
+    lock = xmit(site, creds, lockRequest, "post")
+    
+    if 'error' in lock:
+        bot.say("Unlock failed! " + lock['error']['info'])
+    else:
+        bot.say("Unlock succeeded. ")
 
 def dorevokeTPA(bot, name, project, target, until, reason):
     creds = getCreds(name)
@@ -592,6 +627,36 @@ def commandLock(bot, trigger):
     else:
         pass
     doLock(bot, trigger.nick, target.strip(), reason)
+
+@module.commands('mlock')
+@module.nickname_commands('mlock')
+def commandmLock(bot, trigger):
+    # !lock Some Account > Some reason here.
+    targets, reason = trigger.group(2).split(">", 1)
+    reason = reason.strip()
+    if reason == "proxy":
+        reason = "[[m:NOP|Open proxy]]"
+    elif reason == "LTA" or reason == "lta":
+        reason = "Long term abuse"
+    elif reason == "spam":
+        reason = "Cross wiki spam"
+    elif reason == "abuse":
+        reason = "Cross wiki abuse"
+    elif reason == "banned" or reason == "banned user":
+        reason = "Globally banned user"
+    else:
+        pass
+    
+    for target in targets.split(','):
+        doLock(bot, trigger.nick, target.strip(), reason)
+
+@module.commands('unlock')
+@module.nickname_commands('unlock')
+def commandUnlock(bot, trigger):
+    # !lock Some Account > Some reason here.
+    target, reason = trigger.group(2).split(">", 1)
+    reason = reason.strip()
+    doUnlock(bot, trigger.nick, target.strip(), reason)
 
 @module.commands('softblock')
 @module.nickname_commands('softblock')
