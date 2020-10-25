@@ -66,7 +66,7 @@ def doBlock(bot, name, project, target, until, reason):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not conifgured. Please contact Operator873.")
+        bot.say("You are not configured. Please contact Operator873.")
         return
     
     site = getWiki(project)
@@ -121,7 +121,7 @@ def doReblock(bot, name, project, target, until, reason):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not conifgured. Please contact Operator873.")
+        bot.say("You are not configured. Please contact Operator873.")
         return
         
     site = getWiki(project)
@@ -175,7 +175,7 @@ def doGlobalblock(bot, name, target, until, reason):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not conifgured. Please contact Operator873.")
+        bot.say("You are not configured. Please contact Operator873.")
         return
         
     site = getWiki("metawiki")
@@ -286,7 +286,7 @@ def dorevokeTPA(bot, name, project, target, until, reason):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not conifgured. Please contact Operator873.")
+        bot.say("You are not configured. Please contact Operator873.")
         return
     
     site = getWiki(project)
@@ -339,7 +339,7 @@ def doltaBlock(bot, name, project, target):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not conifgured. Please contact Operator873.")
+        bot.say("You are not configured. Please contact Operator873.")
         return
     
     site = getWiki(project)
@@ -392,7 +392,7 @@ def doSoftblock(bot, name, project, target, until, reason):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not conifgured. Please contact Operator873.")
+        bot.say("You are not configured. Please contact Operator873.")
         return
     
     site = getWiki(project)
@@ -442,7 +442,7 @@ def doUnblock(bot, name, project, target, reason):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not conifgured. Please contact Operator873.")
+        bot.say("You are not configured. Please contact Operator873.")
         return
     
     site = getWiki(project)
@@ -653,10 +653,9 @@ def commandmLock(bot, trigger):
 @module.commands('unlock')
 @module.nickname_commands('unlock')
 def commandUnlock(bot, trigger):
-    # !lock Some Account > Some reason here.
-    target, reason = trigger.group(2).split(">", 1)
-    reason = reason.strip()
-    doUnlock(bot, trigger.nick, target.strip(), reason)
+    # !unlock Some Account
+    reason = "Unlock"
+    doUnlock(bot, trigger.nick, trigger.group(2), reason)
 
 @module.commands('softblock')
 @module.nickname_commands('softblock')
