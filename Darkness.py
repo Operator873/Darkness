@@ -7,6 +7,86 @@ from sopel import module
 
 DARKNESS_DB = "/home/ubuntu/.sopel/modules/dark.db"
 
+def addtomemory(user, payload):
+    result = {}
+    db = sqlite3.connect(DARKNESS_DB)
+    c = db.cursor()
+    
+    check = c.execute('''SELECT * FROM memory WHERE user="%s" AND payload="%s";''' % (user, payload)).fetchall()
+    
+    if len(check) == 0:
+    
+        try:
+            c.execute('''INSERT INTO memory VALUES("%s", "%s");''' % (user, payload))
+            db.commit()
+            result['status'] = "Success"
+            result['data'] = "'" + payload + "' saved"
+        except Exception as e:
+            result['status'] = "Failure"
+            result['data'] = str(e)
+     
+    else:
+        result['status'] = "Success"
+        result['data'] = "'" + payload + "' is already in memory." 
+    
+    db.close()
+    
+    return result
+    
+def getfrommemory(user):
+    result = {}
+    db = sqlite3.connect(DARKNESS_DB)
+    c = db.cursor()
+    
+    try:
+        result['data'] = c.execute('''SELECT payload FROM memory WHERE user="%s";''' % user).fetchall()
+        result['status'] = "Success"
+    except Exception as e:
+        result['status'] = "Failure"
+        result['data'] = str(e)
+        
+    db.close()
+    
+    return result
+
+def delfrommemory(user, payload):
+    result = {}
+    db = sqlite3.connect(DARKNESS_DB)
+    c = db.cursor()
+
+    check = c.execute('''SELECT * FROM memory WHERE user="%s" AND payload="%s";''' % (user, payload)).fetchall()
+
+    if len(check) > 0:
+        c.execute('''DELETE FROM memory WHERE user="%s" AND payload="%s";''' % (user, payload))
+        db.commit()
+        result['status'] = "Success"
+        result['data'] = "'" + payload + "' removed from memory."
+    else:
+        result['status'] = "Failure"
+        result['data'] = "'" + payload + "' is not currently in memory for " + user + "."
+
+    db.close()
+
+    return result
+
+def clearmemory(user):
+    result = {}
+    db = sqlite3.connect(DARKNESS_DB)
+    c = db.cursor()
+    
+    try:
+        c.execute('''DELETE FROM memory WHERE user="%s";''' % user)
+        db.commit()
+        result['status'] = "Success"
+        result['data'] = "Memory Cleared."
+    except Exception as e:
+        result['status'] = "Failure"
+        result['data'] = str(e)
+        
+    db.close()
+
+    return result
+
 def xmit(site, creds, payload, method):
     # This handles the post/get requests
     AUTH = OAuth1(creds[1], creds[2], creds[3], creds[4])
@@ -79,7 +159,10 @@ def doBlock(bot, name, project, target, until, reason):
     
     if csrfToken is False:
         return
-        
+    
+    if until == "indef" or until == "forever":
+        until = "never"
+    
     reqBlock = {
         "action": "block",
         "user": target,
@@ -134,6 +217,9 @@ def doReblock(bot, name, project, target, until, reason):
     
     if csrfToken is False:
         return
+    
+    if until == "indef" or until == "forever":
+        until = "never"
         
     reqBlock = {
         "action": "block",
@@ -188,7 +274,10 @@ def doGlobalblock(bot, name, target, until, reason):
     
     if csrfToken is False:
         return
-        
+    
+    if until == "indef" or until == "forever":
+        until = "never"
+    
     block = {
             "action": "globalblock",
             "format": "json",
@@ -299,6 +388,9 @@ def dorevokeTPA(bot, name, project, target, until, reason):
     
     if csrfToken is False:
         return
+    
+    if until == "indef" or until == "forever":
+        until = "never"
         
     reqBlock = {
         "action": "block",
@@ -405,6 +497,9 @@ def doSoftblock(bot, name, project, target, until, reason):
     
     if csrfToken is False:
         return
+    
+    if until == "indef" or until == "forever":
+        until = "never"
         
     reqBlock = {
         "action": "block",
@@ -774,3 +869,152 @@ def addAlt(bot, trigger):
         bot.say("Alternate nick addded successfully.")
     else:
         bot.say("Something weird happened during confirmation. Ping Operator873")
+
+@module.commands('whoami')
+def whoami(bot, trigger):
+    bot.say("You are " + trigger.nick + " using Freenode account: " + trigger.account + ".")
+
+@module.commands('memadd')
+def memadd(bot, trigger):
+    response = addtomemory(trigger.account, trigger.group(2))
+    if response['status'] == "Success":
+        bot.say(response['data'])
+    else:
+        bot.say("Operator873 something blew up! " + response['data'])
+
+@module.commands('memclear')
+def memclear(bot, trigger):
+    response = clearmemory(trigger.account)
+    
+    if response['status'] == "Success":
+        bot.say(response['data'])
+    else:
+        bot.say("Operator873 something blew up! " + response['data'])
+
+@module.commands('memdel')
+def memdel(bot, trigger):
+    response = delfrommemory(trigger.account, trigger.group(2))
+    
+    if response['status'] == "Success":
+        bot.say(response['data'])
+    else:
+        bot.say("Operator873 something blew up! " + response['data'])
+
+@module.commands('memshow')
+def memshow(bot, trigger):
+    payload = getfrommemory(trigger.account)
+    
+    if payload['status'] == "Success":
+        if len(payload['data']) > 0:
+            response = ""
+            for entry in payload['data']:
+                if len(response) > 0:
+                    response = response + ", " + entry[0]
+                else:
+                    response = entry[0]
+            bot.say("Items currently in memory: " + response)
+        else:
+            bot.say("It doesn't appear you have anything stored in memory.")
+    else:
+        bot.say("An error occured fetching memory items. Ping Operator873")
+        bot.say(payload['data'])
+
+@module.commands('memory')
+def domemory(bot, trigger):
+    try:
+        action, reason = trigger.group(2).split(" ", 1)
+    except:
+        bot.say("Missing data. Syntax is !memory <action> <optional args>")
+        return
+    
+    dump = getfrommemory(trigger.account)
+    
+    if len(dump['data']) > 0:
+    
+        if action.lower() == "lock":
+            # !memory lock <reason>
+            if reason.lower() == "lta":
+                reason = "Long term abuse"
+            elif reason.lower() == "spam":
+                reason = "Cross wiki spam"
+            elif reason.lower() == "abuse":
+                reason = "Cross wiki abuse"
+            else:
+                pass
+            
+            for item in dump['data']:
+                doLock(bot, trigger.account, item[0], reason.strip())
+            
+            devnull = clearmemory(trigger.account)
+                
+        elif action.lower() == "block":
+            # !memory block simplewiki 30days <reason>
+            try:
+                project, until, reason = reason.split(" ", 2)
+            except:
+                bot.say("Missing args! Syntax is: !memory block <project> <length> <reason>")
+                return
+            
+            adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
+            until = re.sub(' +', ' ', adjust).strip()
+            
+            for item in dump['data']:
+                doBlock(bot, trigger.account, project.lower(), item[0], until, reason)
+            
+            devnull = clearmemory(trigger.account)
+                
+        elif action.lower() == "lta":
+            # !memory lta simplewiki
+            project = reason
+            for item in dump['data']:
+                doltaBlock(bot, trigger.account, project, item[0])
+            
+            devnull = clearmemory(trigger.account)
+        
+        elif action.lower() == "gblock":
+            # !memory gblock 1week/31hours/6months/indef <Some reason here.>
+            try:
+                until, reason = reason.split(' ', 1)
+            except:
+                bot.say("Missing args! Syntax is: !memory gblock <length> <reason>")
+                return
+            
+            adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
+            until = re.sub(' +', ' ', adjust).strip()
+
+            if reason.lower() == "proxy":
+                reason = "[[m:NOP|Open proxy]]"
+            elif reason.lower() == "lta":
+                reason = "Long term abuse"
+            elif reason.lower() == "spam":
+                reason = "Cross wiki spam"
+            elif reason.lower() == "abuse":
+                reason = "Cross wiki abuse"
+            else:
+                pass
+            
+            for item in dump['data']:
+                doGlobalblock(bot, trigger.account, item[0], until, reason)
+            
+            devnull = clearmemory(trigger.account)
+        
+        elif action.lower() == "test":
+            try:
+                project, until, reason = reason.split(" ", 2)
+            except:
+                bot.say("Missing args! Syntax is: !memory block <project> <length> <reason>")
+                return
+            
+            adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
+            until = re.sub(' +', ' ', adjust).strip()
+            
+            for item in dump['data']:
+                bot.say(item[0] + " would be blocked on " + project + ". Length: " + until + ". Reason: " + reason)
+            
+            bot.say("I would clear memory now, but I haven't for testing.")
+            
+        else:
+            bot.say("Error! I currently know lock, block, lta, and gblock. Ping Operator873 if additional command is needed.")
+            bot.say("Your stored information has not been altered. Please try again.")
+    else:
+        bot.say("It doesn't appear I have anything in memory to act on for you.")
