@@ -794,16 +794,63 @@ def commandRem(bot, trigger):
 def commandTokens(bot, trigger):
     addKeys(bot, trigger.account, trigger.group(2))
 
-@module.require_owner(message="This function is only available to Operator873.")
+
 @module.commands('getapi')
 def getAPI(bot, trigger):
     # Setup dbase connection
     db = sqlite3.connect(DARKNESS_DB)
     c = db.cursor()
     wiki = str(trigger.group(3))
-    check = c.execute('''SELECT apiurl FROM wikis WHERE wiki="%s";''' % wiki).fetchone()[0]
+    
+    check = c.execute('''SELECT apiurl FROM wikis WHERE wiki="%s";''' % wiki).fetchone()
+    
     db.close()
-    bot.say(check)
+    
+    if check is not None:
+        bot.say(check[0])
+    else:
+        bot.say("I don't know " + wiki + ". You can add it with !addapi <project> <api url>")
+
+@module.commands('addapi')
+def addapi(bot, trigger):
+    
+    try:
+        wiki, apiurl = trigger.group(2).split(' ', 1)
+    except:
+        bot.say("Malformed command. Syntax is '!addapi <project> <api url>")
+        return
+    
+    db = sqlite3.connect(DARKNESS_DB)
+    c = db.cursor()
+    
+    check = c.execute('''SELECT * FROM wikis WHERE wiki="%s";''' % wiki).fetchone()
+    
+    if check is not None:
+        bot.say("I already know " + wiki + ". The api url is " + check[1])
+    else:
+        c.execute('''INSERT INTO wikis VALUES("%s", "%s");''' % (wiki, apiurl))
+        db.commit()
+        bot.say(wiki + " was added with url: " + apiurl)
+    
+    db.close()
+
+@module.require_owner(message="This function is only available to Operator873.")
+@module.commands('delapi')
+def delapi(bot, trigger):
+    db = sqlite3.connect(DARKNESS_DB)
+    c = db.cursor()
+    
+    check = c.execute('''SELECT * FROM wikis WHERE wiki="%s";''' % trigger.group(3)).fetchone()
+    
+    if check is None:
+        bot.say(trigger.group(3) + " doesn't exist in the database.")
+    else:
+        c.execute('''DELETE FROM wikis WHERE wiki="%s";''' % trigger.group(3))
+        db.commit()
+        bot.say(trigger.group(3) + " was removed from the database.")
+    
+    db.close()
+
 
 @module.commands('altnick')
 def addAltNick(bot, trigger):
