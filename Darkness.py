@@ -642,14 +642,14 @@ def commandBlock(bot, trigger):
     project, until, reason = info.strip().split(" ", 2)
     adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
     until = re.sub(' +', ' ', adjust).strip()
-    doBlock(bot, trigger.nick, project, target.strip(), until, reason)
+    doBlock(bot, trigger.account, project, target.strip(), until, reason)
 
 @module.commands('lta')
 @module.nickname_commands('lta')
 def commandltablock(bot, trigger):
     # doltaBlock(bot, name, project, target):
     target, project = trigger.group(2).split(">", 1)
-    doltaBlock(bot, trigger.nick, project.strip(), target.strip())
+    doltaBlock(bot, trigger.account, project.strip(), target.strip())
 
 @module.commands('tpa')
 @module.nickname_commands('tpa')
@@ -659,7 +659,7 @@ def commandRevoketpa(bot, trigger):
     project, until, reason = info.strip().split(" ", 2)
     adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
     until = re.sub(' +', ' ', adjust).strip()
-    dorevokeTPA(bot, trigger.nick, project, target.strip(), until, reason)
+    dorevokeTPA(bot, trigger.account, project, target.strip(), until, reason)
 
 @module.commands('reblock')
 @module.nickname_commands('reblock')
@@ -669,7 +669,7 @@ def commandreBlock(bot, trigger):
     project, until, reason = info.strip().split(" ", 2)
     adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
     until = re.sub(' +', ' ', adjust).strip()
-    doReblock(bot, trigger.nick, project, target.strip(), until, reason)
+    doReblock(bot, trigger.account, project, target.strip(), until, reason)
 
 @module.commands('proxyblock')
 @module.nickname_commands('proxyblock')
@@ -680,7 +680,7 @@ def commandproxyBlock(bot, trigger):
     adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
     until = re.sub(' +', ' ', adjust).strip()
     reason = "[[m:NOP|Open proxy]]"
-    doReblock(bot, trigger.nick, project, target.strip(), until, reason)
+    doReblock(bot, trigger.account, project, target.strip(), until, reason)
 
 @module.commands('gblock')
 @module.nickname_commands('gblock')
@@ -701,7 +701,7 @@ def commandglobalBlock(bot, trigger):
         reason = "Cross wiki abuse"
     else:
         pass
-    doGlobalblock(bot, trigger.nick, target.strip(), until, reason)
+    doGlobalblock(bot, trigger.account, target.strip(), until, reason)
 
 @module.commands('lock')
 @module.nickname_commands('lock')
@@ -721,7 +721,7 @@ def commandLock(bot, trigger):
         reason = "Globally banned user"
     else:
         pass
-    doLock(bot, trigger.nick, target.strip(), reason)
+    doLock(bot, trigger.account, target.strip(), reason)
 
 @module.commands('mlock')
 @module.nickname_commands('mlock')
@@ -743,14 +743,14 @@ def commandmLock(bot, trigger):
         pass
     
     for target in targets.split(','):
-        doLock(bot, trigger.nick, target.strip(), reason)
+        doLock(bot, trigger.account, target.strip(), reason)
 
 @module.commands('unlock')
 @module.nickname_commands('unlock')
 def commandUnlock(bot, trigger):
     # !unlock Some Account
     reason = "Unlock"
-    doUnlock(bot, trigger.nick, trigger.group(2), reason)
+    doUnlock(bot, trigger.account, trigger.group(2), reason)
 
 @module.commands('softblock')
 @module.nickname_commands('softblock')
@@ -760,7 +760,7 @@ def commandSoftblock(bot, trigger):
     project, until, reason = info.strip().split(" ", 2)
     adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
     until = re.sub(' +', ' ', adjust).strip()
-    doSoftblock(bot, trigger.nick, project, target.strip(), until, reason)
+    doSoftblock(bot, trigger.account, project, target.strip(), until, reason)
 
 @module.commands('unblock')
 @module.nickname_commands('unblock')
@@ -768,7 +768,7 @@ def commandUnblock(bot, trigger):
     # !unblock Some Nick Here > simplewiki Some reason here.
     target, info = trigger.group(2).split(">", 1)
     project, reason = info.strip().split(" ", 1)
-    doUnblock(bot, trigger.nick, project, target.strip(), reason)
+    doUnblock(bot, trigger.account, project, target.strip(), reason)
     
 @module.commands('edit')
 @module.nickname_commands('edit')
@@ -792,7 +792,7 @@ def commandRem(bot, trigger):
 @module.commands('tokens')
 @module.nickname_commands('tokens')
 def commandTokens(bot, trigger):
-    addKeys(bot, trigger.nick, trigger.group(2))
+    addKeys(bot, trigger.account, trigger.group(2))
 
 @module.require_owner(message="This function is only available to Operator873.")
 @module.commands('getapi')
@@ -933,12 +933,16 @@ def domemory(bot, trigger):
     
         if action.lower() == "lock":
             # !memory lock <reason>
-            if reason.lower() == "lta":
+            if reason.lower() == "proxy":
+                reason = "[[m:NOP|Open proxy]]"
+            elif reason.lower() == "lta":
                 reason = "Long term abuse"
             elif reason.lower() == "spam":
                 reason = "Cross wiki spam"
             elif reason.lower() == "abuse":
                 reason = "Cross wiki abuse"
+            elif reason.lower() == "banned" or reason.lower() == "banned user":
+                reason = "Globally banned user"
             else:
                 pass
             
@@ -990,6 +994,8 @@ def domemory(bot, trigger):
                 reason = "Cross wiki spam"
             elif reason.lower() == "abuse":
                 reason = "Cross wiki abuse"
+            elif reason.lower() == "banned" or reason.lower() == "banned user":
+                reason = "Globally banned user"
             else:
                 pass
             
