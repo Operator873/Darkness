@@ -110,3 +110,30 @@ This plugin requires OAuth 1.0a tokens configured on https://meta.wikimedia.org/
 
 ```!getapi project```
   - Debug command. Searches the database for the specified project and returns the apiurl
+
+## Memory functions
+
+```!memadd <data>```
+  - Add the provided data to memory
+
+```!memdel <data>```
+  - Remove the provided data from memory
+
+```!memshow```
+  - Show all currently stored data
+
+```!memclear```
+  - Clears all data stored
+
+```!memory <action> <optional ags>```
+  - Uses the contents of the memory to perform given actions. Once the action is complete, memory is wiped.
+  ```!memory block <project> <duration> <reason>```
+    - Blocks the accounts in memory on the project provided for the duration provided with the reason.
+  ```!memory lock <reason>```
+    - Locks the accounts
+  ```!memory gblock <duration> <reason>```
+    - Globally blocks for the duration with reason
+  ```!memory lta <project>```
+    - A quick hardblock for 7 days on the provided project
+  ```!memory test <project> <duration> <reason>```
+    - A test operation for debug purposes. Does not clear memory upon completion.
