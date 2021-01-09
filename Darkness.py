@@ -6,6 +6,7 @@ from requests_oauthlib import OAuth1
 from sopel import module
 
 DARKNESS_DB = "/home/ubuntu/.sopel/modules/dark.db"
+CONTACT_OP = "You are not configured. Please contact Operator873."
 
 def addtomemory(user, payload):
     result = {}
@@ -91,9 +92,9 @@ def xmit(site, creds, payload, method):
     # This handles the post/get requests
     AUTH = OAuth1(creds[1], creds[2], creds[3], creds[4])
         
-    if method is "post":
+    if method == "post":
         return requests.post(site, data=payload, auth=AUTH).json()
-    elif method is "get":
+    elif method == "get":
         return requests.get(site, params=payload, auth=AUTH).json()
 
 def getWiki(project):
@@ -146,7 +147,7 @@ def doBlock(bot, name, project, target, until, reason):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not configured. Please contact Operator873.")
+        bot.say(CONTACT_OP)
         return
     
     site = getWiki(project)
@@ -204,7 +205,7 @@ def doReblock(bot, name, project, target, until, reason):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not configured. Please contact Operator873.")
+        bot.say(CONTACT_OP)
         return
         
     site = getWiki(project)
@@ -261,7 +262,7 @@ def doGlobalblock(bot, name, target, until, reason):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not configured. Please contact Operator873.")
+        bot.say(CONTACT_OP)
         return
         
     site = getWiki("metawiki")
@@ -305,7 +306,7 @@ def doLock(bot, name, target, reason):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not configured. Please contact Operator873.")
+        bot.say(CONTACT_OP)
         return
     
     site = getWiki("metawiki")
@@ -340,7 +341,7 @@ def doUnlock(bot, name, target, reason):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not configured. Please contact Operator873.")
+        bot.say(CONTACT_OP)
         return
     
     site = getWiki("metawiki")
@@ -375,7 +376,7 @@ def dorevokeTPA(bot, name, project, target, until, reason):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not configured. Please contact Operator873.")
+        bot.say(CONTACT_OP)
         return
     
     site = getWiki(project)
@@ -431,7 +432,7 @@ def doltaBlock(bot, name, project, target):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not configured. Please contact Operator873.")
+        bot.say(CONTACT_OP)
         return
     
     site = getWiki(project)
@@ -449,7 +450,7 @@ def doltaBlock(bot, name, project, target):
         "action": "block",
         "user": target,
         "expiry": "1week",
-        "reason": "[[Wikipedia:Blocks and bans#Evasion|Block evasion]]",
+        "reason": "LTA / Block evasion",
         "token": csrfToken,
         "noemail":"",
         "nocreate":"",
@@ -484,7 +485,7 @@ def doSoftblock(bot, name, project, target, until, reason):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not configured. Please contact Operator873.")
+        bot.say(CONTACT_OP)
         return
     
     site = getWiki(project)
@@ -537,7 +538,7 @@ def doUnblock(bot, name, project, target, reason):
     creds = getCreds(name)
     
     if creds is None:
-        bot.say("You are not configured. Please contact Operator873.")
+        bot.say(CONTACT_OP)
         return
     
     site = getWiki(project)
@@ -634,62 +635,192 @@ def addKeys(bot, name, info):
             db.commit()
             db.close()
 
+def processinfo(info):
+    info = "a=" + info
+    l = re.split(r"(\w)=", info)[1:]
+    
+    data = {l[i]: l[i+1] for i in range(0, len(l), 2)}
+    
+    for key in data:
+        data[key] = data[key].strip()
+    
+    if 'd' in data:
+        adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", data['d'])
+        data['d'] = re.sub(' +', ' ', adjust).strip()
+    
+    return data
+
+
+@module.commands('testblock')
+@module.nickname_commands('testblock')
+def commandtestBlock(bot, trigger):
+    # New syntax: !block Some Nick Here p=project d=duration r=reason
+    
+    data = processinfo(trigger.group(2))
+    
+    if len(data) < 4:
+        bot.say("Command missing arguements: !block <target account> p=project d=duration r=reason for block")
+        return
+    elif data['a'] == '':
+        bot.say("Target of block must go first or be indicated with 'a=target account'. !block <target account> p=project d=duration r=reason for block")
+        return
+    else:
+        try:
+            project = data['p']
+            target = data['a']
+            until = data['d']
+            reason = data['r']
+        except Exception as e:
+            bot.say("Error! " + str(e))
+            return
+        
+        bot.say(target + " would be blocked on " + project + " for " + until + " with reason: " + reason)
+
 @module.commands('block')
 @module.nickname_commands('block')
 def commandBlock(bot, trigger):
-    # !block Some Nick Here > simplewiki 1week/31hours/6months/indef Some reason here.
-    target, info = trigger.group(2).split(">", 1)
-    project, until, reason = info.strip().split(" ", 2)
-    adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
-    until = re.sub(' +', ' ', adjust).strip()
-    doBlock(bot, trigger.account, project, target.strip(), until, reason)
+    # New syntax: !block Some Nick Here p=project d=duration r=reason
+    
+    data = processinfo(trigger.group(2))
+    
+    if len(data) < 4:
+        bot.say("Command missing arguements: !block <target account> p=project d=duration r=reason for block")
+        return
+    elif data['a'] == '':
+        bot.say("Target of block must go first or be indicated with 'a=target account'. !block <target account> p=project d=duration r=reason for block")
+        return
+    else:
+        try:
+            project = data['p']
+            target = data['a']
+            until = data['d']
+            reason = data['r']
+        except Exception as e:
+            bot.say("Error! " + str(e))
+            return
+    
+    doBlock(bot, trigger.account, project, target, until, reason)
 
 @module.commands('lta')
 @module.nickname_commands('lta')
 def commandltablock(bot, trigger):
-    # doltaBlock(bot, name, project, target):
-    target, project = trigger.group(2).split(">", 1)
-    doltaBlock(bot, trigger.account, project.strip(), target.strip())
+    # New syntax: !lta Some Nick Here p=project
+    
+    data = processinfo(trigger.group(2))
+    
+    if len(data) < 2:
+        bot.say("Command missing arguements: !lta Some Nick Here p=project")
+        return
+    elif data['a'] == '':
+        bot.say("Target of block must go first or be indicated with 'a=target account'. !lta Some Nick Here p=project")
+        return
+    else:
+        try:
+            project = data['p']
+            target = data['a']
+        except Exception as e:
+            bot.say("Error! " + str(e))
+            return
+    
+    doltaBlock(bot, trigger.account, project, target)
 
 @module.commands('tpa')
 @module.nickname_commands('tpa')
 def commandRevoketpa(bot, trigger):
-    # !block Some Nick Here > simplewiki 1week/31hours/6months/indef Some reason here.
-    target, info = trigger.group(2).split(">", 1)
-    project, until, reason = info.strip().split(" ", 2)
-    adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
-    until = re.sub(' +', ' ', adjust).strip()
-    dorevokeTPA(bot, trigger.account, project, target.strip(), until, reason)
+    # New syntax: !tpa Some Nick Here p=project d=duration r=reason
+    
+    data = processinfo(trigger.group(2))
+    
+    if len(data) < 4:
+        bot.say("Command missing arguements: !tpa <target account> p=project d=duration r=reason for block")
+        return
+    elif data['a'] == '':
+        bot.say("Target of block must go first or be indicated with 'a=target account'. !tpa <target account> p=project d=duration r=reason for block")
+        return
+    else:
+        try:
+            project = data['p']
+            target = data['a']
+            until = data['d']
+            reason = data['r']
+        except Exception as e:
+            bot.say("Error! " + str(e))
+            return
+
+    dorevokeTPA(bot, trigger.account, project, target, until, reason)
 
 @module.commands('reblock')
 @module.nickname_commands('reblock')
 def commandreBlock(bot, trigger):
-    # !block Some Nick Here > simplewiki 1week/31hours/6months/indef Some reason here.
-    target, info = trigger.group(2).split(">", 1)
-    project, until, reason = info.strip().split(" ", 2)
-    adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
-    until = re.sub(' +', ' ', adjust).strip()
-    doReblock(bot, trigger.account, project, target.strip(), until, reason)
+    # New syntax: !reblock Some Nick Here p=project d=duration r=reason
+    
+    data = processinfo(trigger.group(2))
+    
+    if len(data) < 4:
+        bot.say("Command missing arguements: !reblock <target account> p=project d=duration r=reason for block")
+        return
+    elif data['a'] == '':
+        bot.say("Target of block must go first or be indicated with 'a=target account'. !reblock <target account> p=project d=duration r=reason for block")
+        return
+    else:
+        try:
+            project = data['p']
+            target = data['a']
+            until = data['d']
+            reason = data['r']
+        except Exception as e:
+            bot.say("Error! " + str(e))
+            return
+    
+    doReblock(bot, trigger.account, project, target, until, reason)
 
 @module.commands('proxyblock')
 @module.nickname_commands('proxyblock')
 def commandproxyBlock(bot, trigger):
-    # !proxyblock Some Nick Here > simplewiki 1week/31hours/6months/indef.
-    target, info = trigger.group(2).split(">", 1)
-    project, until = info.strip().split(" ", 1)
-    adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
-    until = re.sub(' +', ' ', adjust).strip()
+    # New syntax: !proxyblock Some Nick Here p=project d=duration
+    
+    data = processinfo(trigger.group(2))
+    
+    if len(data) < 3:
+        bot.say("Command missing arguements: !proxyblock Some Nick Here p=project d=duration")
+        return
+    elif data['a'] == '':
+        bot.say("Target of block must go first or be indicated with 'a=target account'. !proxyblock Some Nick Here p=project d=duration")
+        return
+    else:
+        try:
+            project = data['p']
+            target = data['a']
+            until = data['d']
+        except Exception as e:
+            bot.say("Error! " + str(e))
+            return
+    
     reason = "[[m:NOP|Open proxy]]"
-    doReblock(bot, trigger.account, project, target.strip(), until, reason)
+    doReblock(bot, trigger.account, project, target, until, reason)
 
 @module.commands('gblock')
 @module.nickname_commands('gblock')
 def commandglobalBlock(bot, trigger):
-    # !gblock Some IP Here > 1week/31hours/6months/indef Some reason here.
-    target, info = trigger.group(2).split('>')
-    until, reason = info.split(' ', 1)
-    adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
-    until = re.sub(' +', ' ', adjust).strip()
+    # New syntax: !gblock Some IP Here d=duration r=reason
+    
+    data = processinfo(trigger.group(2))
+    
+    if len(data) < 3:
+        bot.say("Command missing arguements: !gblock Some IP Here d=duration r=reason")
+        return
+    elif data['a'] == '':
+        bot.say("Target of block must go first or be indicated with 'a=target account'. !gblock Some IP Here d=duration r=reason")
+        return
+    else:
+        try:
+            project = data['p']
+            target = data['a']
+            until = data['d']
+            reason = data['r']
+        except Exception as e:
+            bot.say("Error! " + str(e))
+            return
 
     if reason == "proxy":
         reason = "[[m:NOP|Open proxy]]"
@@ -701,34 +832,30 @@ def commandglobalBlock(bot, trigger):
         reason = "Cross wiki abuse"
     else:
         pass
-    doGlobalblock(bot, trigger.account, target.strip(), until, reason)
+    
+    doGlobalblock(bot, trigger.account, target, until, reason)
 
 @module.commands('lock')
 @module.nickname_commands('lock')
 def commandLock(bot, trigger):
-    # !lock Some Account > Some reason here.
-    target, reason = trigger.group(2).split(">", 1)
-    reason = reason.strip()
-    if reason == "proxy":
-        reason = "[[m:NOP|Open proxy]]"
-    elif reason == "LTA" or reason == "lta":
-        reason = "Long term abuse"
-    elif reason == "spam":
-        reason = "Cross wiki spam"
-    elif reason == "abuse":
-        reason = "Cross wiki abuse"
-    elif reason == "banned" or reason == "banned user":
-        reason = "Globally banned user"
+    # New syntax: !lock Some Account r=reason
+    
+    data = processinfo(trigger.group(2))
+    
+    if len(data) < 2:
+        bot.say("Command missing arguements: !lock Some Account r=reason")
+        return
+    elif data['a'] == '':
+        bot.say("Target of block must go first or be indicated with 'a=target account'. !lock Some Account r=reason")
+        return
     else:
-        pass
-    doLock(bot, trigger.account, target.strip(), reason)
+        try:
+            target = data['a']
+            reason = data['r']
+        except Exception as e:
+            bot.say("Error! " + str(e))
+            return
 
-@module.commands('mlock')
-@module.nickname_commands('mlock')
-def commandmLock(bot, trigger):
-    # !lock Some Account > Some reason here.
-    targets, reason = trigger.group(2).split(">", 1)
-    reason = reason.strip()
     if reason == "proxy":
         reason = "[[m:NOP|Open proxy]]"
     elif reason == "LTA" or reason == "lta":
@@ -742,8 +869,7 @@ def commandmLock(bot, trigger):
     else:
         pass
     
-    for target in targets.split(','):
-        doLock(bot, trigger.account, target.strip(), reason)
+    doLock(bot, trigger.account, target, reason)
 
 @module.commands('unlock')
 @module.nickname_commands('unlock')
@@ -755,26 +881,51 @@ def commandUnlock(bot, trigger):
 @module.commands('softblock')
 @module.nickname_commands('softblock')
 def commandSoftblock(bot, trigger):
-    # !block Some Nick Here > simplewiki 1week/31hours/6months/indef Some reason here.
-    target, info = trigger.group(2).split(">", 1)
-    project, until, reason = info.strip().split(" ", 2)
-    adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
-    until = re.sub(' +', ' ', adjust).strip()
-    doSoftblock(bot, trigger.account, project, target.strip(), until, reason)
+    # New syntax: # !softblock Some Nick Here p=project d=duration r=Some reason here.
+    
+    data = processinfo(trigger.group(2))
+    
+    if len(data) < 4:
+        bot.say("Command missing arguements: !softblock Some Nick Here p=project d=duration r=Some reason here.")
+        return
+    elif data['a'] == '':
+        bot.say("Target of block must go first or be indicated with 'a=target account'. !softblock Some Nick Here p=project d=duration r=Some reason here.")
+        return
+    else:
+        try:
+            project = data['p']
+            target = data['a']
+            until = data['d']
+            reason = data['r']
+        except Exception as e:
+            bot.say("Error! " + str(e))
+            return
+    
+    doSoftblock(bot, trigger.account, project, target, until, reason)
 
 @module.commands('unblock')
 @module.nickname_commands('unblock')
 def commandUnblock(bot, trigger):
-    # !unblock Some Nick Here > simplewiki Some reason here.
-    target, info = trigger.group(2).split(">", 1)
-    project, reason = info.strip().split(" ", 1)
-    doUnblock(bot, trigger.account, project, target.strip(), reason)
+    # New syntax: !unblock Some Account Here p=project r=reason
     
-@module.commands('edit')
-@module.nickname_commands('edit')
-def commandEdit(bot, trigger):
-    # doEdit(bot, name, project, edit)
-    bot.say("This command is disabled.")
+    data = processinfo(trigger.group(2))
+    
+    if len(data) < 4:
+        bot.say("Command missing arguements: !unblock Some Account Here p=project r=reason")
+        return
+    elif data['a'] == '':
+        bot.say("Target of block must go first or be indicated with 'a=target account'. !unblock Some Account Here p=project r=reason")
+        return
+    else:
+        try:
+            project = data['p']
+            target = data['a']
+            reason = data['r']
+        except Exception as e:
+            bot.say("Error! " + str(e))
+            return
+    
+    doUnblock(bot, trigger.account, project, target, reason)
     
 @module.require_owner(message="This function is only available to Operator873.")
 @module.commands('addUser')
@@ -851,72 +1002,6 @@ def delapi(bot, trigger):
     
     db.close()
 
-
-@module.commands('altnick')
-def addAltNick(bot, trigger):
-    # !altnick <alt nick> -- must be done from existing nick
-    db = sqlite3.connect(DARKNESS_DB)
-    c = db.cursor()
-
-    creds = c.execute('''SELECT * from auth where account="%s";''' % trigger.nick).fetchone()
-    
-    if creds is None:
-        bot.say("You're not configured. Are you using your main nick?")
-        return
-    
-    addUser(bot, trigger.group(2))
-    
-    origaccount, key1, key2, key3, key4 = creds
-    
-    try:
-        c.execute('''UPDATE auth SET consumer_token="%s", consumer_secret="%s", access_token="%s", access_secret="%s" WHERE account="%s";''' % (key1, key2, key3, key4, trigger.group(2)))
-        db.commit()
-        bot.say("Keys added.")
-    except Exception as e:
-        bot.say(str(e))
-    
-    check = c.execute('''SELECT * from auth where account="%s";''' % trigger.group(2)).fetchall()[0]
-    
-    db.close()
-    
-    if check != 0:
-        bot.say("Alternate nick addded successfully.")
-    else:
-        bot.say("Something weird happened during confirmation. Ping Operator873")
-
-@module.require_owner(message="This function is only available to Operator873.")
-@module.commands('addalt')
-def addAlt(bot, trigger):
-    # !addalt <orig> <alt>
-    db = sqlite3.connect(DARKNESS_DB)
-    c = db.cursor()
-
-    creds = c.execute('''SELECT * from auth where account="%s";''' % trigger.group(3)).fetchone()
-    
-    if creds is None:
-        bot.say("You're not configured. Are you using your main nick?")
-        return
-    
-    addUser(bot, trigger.group(4))
-    
-    origaccount, key1, key2, key3, key4 = creds
-    
-    try:
-        c.execute('''UPDATE auth SET consumer_token="%s", consumer_secret="%s", access_token="%s", access_secret="%s" WHERE account="%s";''' % (key1, key2, key3, key4, trigger.group(4)))
-        db.commit()
-        bot.say("Keys added.")
-    except Exception as e:
-        bot.say(str(e))
-    
-    check = c.execute('''SELECT * from auth where account="%s";''' % trigger.group(4)).fetchone()
-    
-    db.close()
-    
-    if check is not None:
-        bot.say("Alternate nick addded successfully.")
-    else:
-        bot.say("Something weird happened during confirmation. Ping Operator873")
-
 @module.commands('whoami')
 def whoami(bot, trigger):
     bot.say("You are " + trigger.nick + " using Freenode account: " + trigger.account + ".")
@@ -969,17 +1054,28 @@ def memshow(bot, trigger):
 @module.commands('memory')
 def domemory(bot, trigger):
     try:
-        action, reason = trigger.group(2).split(" ", 1)
+        action, info = trigger.group(2).split(" ", 1)
     except:
         bot.say("Missing data. Syntax is !memory <action> <optional args>")
         return
     
+    # New syntax: !memory <action> a=account p=project d=duration r=reason
+    
     dump = getfrommemory(trigger.account)
+
+    data = processinfo(info)
     
     if len(dump['data']) > 0:
     
         if action.lower() == "lock":
-            # !memory lock <reason>
+            # !memory lock r=reason
+            
+            try:
+                reason = data['r']
+            except:
+                bot.say("Malformed command. Syntax is !memory lock r=reason")
+                return
+            
             if reason.lower() == "proxy":
                 reason = "[[m:NOP|Open proxy]]"
             elif reason.lower() == "lta":
@@ -999,15 +1095,15 @@ def domemory(bot, trigger):
             devnull = clearmemory(trigger.account)
                 
         elif action.lower() == "block":
-            # !memory block simplewiki 30days <reason>
-            try:
-                project, until, reason = reason.split(" ", 2)
-            except:
-                bot.say("Missing args! Syntax is: !memory block <project> <length> <reason>")
-                return
+            # !memory block p=project d=duration r=reason
             
-            adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
-            until = re.sub(' +', ' ', adjust).strip()
+            try:
+                reason = data['r']
+                until = data['d']
+                project = data['p']
+            except:
+                bot.say("Malformed command. Syntax is !memory block p=project d=duration r=reason")
+                return
             
             for item in dump['data']:
                 doBlock(bot, trigger.account, project.lower(), item[0], until, reason)
@@ -1015,23 +1111,27 @@ def domemory(bot, trigger):
             devnull = clearmemory(trigger.account)
                 
         elif action.lower() == "lta":
-            # !memory lta simplewiki
-            project = reason
+            # !memory lta p=project
+            
+            try:
+                project = data['p']
+            except:
+                bot.say("Malformed command. Syntax is !memory lta p=project")
+                return
+            
             for item in dump['data']:
                 doltaBlock(bot, trigger.account, project, item[0])
             
             devnull = clearmemory(trigger.account)
         
         elif action.lower() == "gblock":
-            # !memory gblock 1week/31hours/6months/indef <Some reason here.>
+            # !memory gblock d=duration r=reason
             try:
-                until, reason = reason.split(' ', 1)
+                project = data['p']
+                reason = data['r']
             except:
-                bot.say("Missing args! Syntax is: !memory gblock <length> <reason>")
+                bot.say("Malformed command. Syntax is !memory gblock d=duration r=reason")
                 return
-            
-            adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
-            until = re.sub(' +', ' ', adjust).strip()
 
             if reason.lower() == "proxy":
                 reason = "[[m:NOP|Open proxy]]"
@@ -1052,14 +1152,14 @@ def domemory(bot, trigger):
             devnull = clearmemory(trigger.account)
         
         elif action.lower() == "test":
+            # !memory test p=project d=duration r=reason
             try:
-                project, until, reason = reason.split(" ", 2)
+                reason = data['r']
+                until = data['d']
+                project = data['p']
             except:
-                bot.say("Missing args! Syntax is: !memory block <project> <length> <reason>")
+                bot.say("Malformed command. Syntax is !memory test p=project d=duration r=reason")
                 return
-            
-            adjust = re.sub(r"([0-9]+([0-9]+)?)",r" \1 ", until)
-            until = re.sub(' +', ' ', adjust).strip()
             
             for item in dump['data']:
                 bot.say(item[0] + " would be blocked on " + project + ". Length: " + until + ". Reason: " + reason)
