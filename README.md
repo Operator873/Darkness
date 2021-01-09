@@ -9,7 +9,7 @@ Hello Darkness my old friend...
 
 This is a Sopel IRC Bot plugin which supports Wikimedia sysops, global sysops, checkusers, and stewards by allowing block and lock actions from IRC. It could be modified quite easily to work with Miraheze or any other Mediawiki install.
 
-I call it Darkness because the ease at which you can apply blocks will make othere wonder if you have dark arts at your disposal.
+Darkness is the development version of [S.A.M.](https://github.com/Operator873/SAM), the officially offered module to assist with Wikimedia projects.
 
 I take absolutely no responsibility for anything you do on wiki with this plugin. Play stupid games, win stupid prizes... like being desysopped. 
 
